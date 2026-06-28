@@ -41,6 +41,28 @@ function AppContent() {
   // Local game interaction state
   const [selectedPieceIndex, setSelectedPieceIndex] = useState<number | null>(null);
   const [validDestinations, setValidDestinations] = useState<number[]>([]);
+  const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
+  const feedbackTimeoutRef = useRef<any>(null);
+
+  useEffect(() => {
+    return () => {
+      if (feedbackTimeoutRef.current) {
+        clearTimeout(feedbackTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const logMoveFailure = (msg: string) => {
+    console.warn(`[Checkers Move Failure] ${msg}`);
+    setFeedbackMessage(msg);
+    setAnnouncement(msg);
+    if (feedbackTimeoutRef.current) {
+      clearTimeout(feedbackTimeoutRef.current);
+    }
+    feedbackTimeoutRef.current = setTimeout(() => {
+      setFeedbackMessage(null);
+    }, 4500);
+  };
 
   // Slices 5 & 6 states
   const [chatOpen, setChatOpen] = useState(true); // Default open on desktop
@@ -303,10 +325,29 @@ function AppContent() {
   // Click handlers
   const handleSquareClick = async (index: number) => {
     if (!activeGame || !user) return;
-    if (activeGame.status !== "playing") return;
-    if (!isMyTurn || !userColor) return;
 
     const cell = activeGame.board[index];
+    const r = Math.floor(index / 8);
+    const c = index % 8;
+    const squareName = `${String.fromCharCode(65 + c)}${8 - r}`;
+
+    // 1. Check if game is in progress
+    if (activeGame.status !== "playing") {
+      if (cell !== null) {
+        logMoveFailure(`Cannot move piece at ${squareName} because the game status is '${activeGame.status}'.`);
+      }
+      return;
+    }
+
+    // 2. Check if it is the player's turn
+    if (!isMyTurn || !userColor) {
+      if (cell !== null) {
+        const turnColor = activeGame.turn === "W" ? "White" : "Black";
+        logMoveFailure(`Cannot move piece at ${squareName} because it is ${turnColor}'s turn.`);
+      }
+      return;
+    }
+
     const isOwnPiece =
       cell &&
       (userColor === "W"
@@ -314,28 +355,76 @@ function AppContent() {
         : cell === "B" || cell === "BK");
 
     if (isOwnPiece) {
+      // 3. Check if locked mid-jump
       if (activeGame.pendingCapture !== undefined && activeGame.pendingCapture !== index) {
-        return; // Locked to the other piece mid-jump
+        const lockedR = Math.floor(activeGame.pendingCapture / 8);
+        const lockedC = activeGame.pendingCapture % 8;
+        const lockedName = `${String.fromCharCode(65 + lockedC)}${8 - lockedR}`;
+        logMoveFailure(`Cannot move piece at ${squareName} because you must continue the multi-jump with your locked piece at ${lockedName}.`);
+        return;
       }
+
+      // 4. Check if the clicked piece has any valid moves
       const allMoves = getAvailableMoves(activeGame.board, userColor, activeGame.pendingCapture);
       const filteredMoves = allMoves.filter((m) => m.start === index);
+      if (filteredMoves.length === 0) {
+        // Find if any capture moves exist on the board
+        const capturesExist = allMoves.some((m) => m.isCapture);
+        if (capturesExist) {
+          logMoveFailure(`Piece at ${squareName} has no valid moves because checkers rules force you to make a capture move with another piece.`);
+        } else {
+          logMoveFailure(`Piece at ${squareName} has no valid moves (it is blocked).`);
+        }
+        return;
+      }
+
       setSelectedPieceIndex(index);
       setValidDestinations(filteredMoves.map((m) => m.end));
-    } else if (selectedPieceIndex !== null && validDestinations.includes(index)) {
-      try {
-        await makeMoveMutation({
-          gameId: activeGame._id,
-          startIndex: selectedPieceIndex,
-          endIndex: index,
-          user: user,
-        });
-      } catch (err) {
-        console.error("Failed to make move:", err);
-      } finally {
+      setFeedbackMessage(null);
+    } else if (selectedPieceIndex !== null) {
+      if (validDestinations.includes(index)) {
+        try {
+          await makeMoveMutation({
+            gameId: activeGame._id,
+            startIndex: selectedPieceIndex,
+            endIndex: index,
+            user: user,
+          });
+          setFeedbackMessage(null);
+        } catch (err) {
+          console.error("Failed to make move:", err);
+          logMoveFailure("Failed to execute move on the server.");
+        } finally {
+          setSelectedPieceIndex(null);
+          setValidDestinations([]);
+        }
+      } else {
+        const startR = Math.floor(selectedPieceIndex / 8);
+        const startC = selectedPieceIndex % 8;
+        const startName = `${String.fromCharCode(65 + startC)}${8 - startR}`;
+        
+        let reason = `Square ${squareName} is not a valid destination.`;
+        if ((r + c) % 2 === 0) {
+          reason = `Square ${squareName} is not playable (must be a dark square).`;
+        } else if (cell !== null) {
+          reason = `Square ${squareName} is occupied.`;
+        } else {
+          const allMoves = getAvailableMoves(activeGame.board, userColor, activeGame.pendingCapture);
+          const capturesExist = allMoves.some((m) => m.isCapture);
+          if (capturesExist) {
+            reason = `Move to ${squareName} is invalid because checkers rules force you to make a capture move.`;
+          } else {
+            reason = `Move to ${squareName} is invalid (not a standard diagonal move for this piece).`;
+          }
+        }
+        logMoveFailure(`Cannot move piece from ${startName} to ${squareName}: ${reason}`);
         setSelectedPieceIndex(null);
         setValidDestinations([]);
       }
     } else {
+      if (cell !== null) {
+        logMoveFailure(`Piece at ${squareName} is an opponent's piece.`);
+      }
       setSelectedPieceIndex(null);
       setValidDestinations([]);
     }
@@ -347,12 +436,24 @@ function AppContent() {
       e.preventDefault();
       return;
     }
-    if (!isMyTurn || !userColor) {
+    const cell = activeGame.board[index];
+    const r = Math.floor(index / 8);
+    const c = index % 8;
+    const squareName = `${String.fromCharCode(65 + c)}${8 - r}`;
+
+    if (activeGame.status !== "playing") {
       e.preventDefault();
+      logMoveFailure(`Cannot drag piece at ${squareName} because the game status is '${activeGame.status}'.`);
       return;
     }
 
-    const cell = activeGame.board[index];
+    if (!isMyTurn || !userColor) {
+      e.preventDefault();
+      const turnColor = activeGame.turn === "W" ? "White" : "Black";
+      logMoveFailure(`Cannot drag piece at ${squareName} because it is ${turnColor}'s turn.`);
+      return;
+    }
+
     const isOwnPiece =
       cell &&
       (userColor === "W"
@@ -361,11 +462,16 @@ function AppContent() {
 
     if (!isOwnPiece) {
       e.preventDefault();
+      logMoveFailure(`Piece at ${squareName} is an opponent's piece.`);
       return;
     }
 
     if (activeGame.pendingCapture !== undefined && activeGame.pendingCapture !== index) {
       e.preventDefault();
+      const lockedR = Math.floor(activeGame.pendingCapture / 8);
+      const lockedC = activeGame.pendingCapture % 8;
+      const lockedName = `${String.fromCharCode(65 + lockedC)}${8 - lockedR}`;
+      logMoveFailure(`Cannot drag piece at ${squareName} because you must continue the multi-jump with your locked piece at ${lockedName}.`);
       return;
     }
 
@@ -374,6 +480,12 @@ function AppContent() {
 
     if (filteredMoves.length === 0) {
       e.preventDefault();
+      const capturesExist = allMoves.some((m) => m.isCapture);
+      if (capturesExist) {
+        logMoveFailure(`Piece at ${squareName} cannot be dragged because you are forced to make a capture move with another piece.`);
+      } else {
+        logMoveFailure(`Piece at ${squareName} cannot be dragged (it has no valid moves).`);
+      }
       return;
     }
 
@@ -398,6 +510,10 @@ function AppContent() {
     if (!draggedIndexStr) return;
 
     const draggedIndex = parseInt(draggedIndexStr, 10);
+    const r = Math.floor(index / 8);
+    const c = index % 8;
+    const squareName = `${String.fromCharCode(65 + c)}${8 - r}`;
+
     if (draggedIndex === selectedPieceIndex && validDestinations.includes(index)) {
       try {
         await makeMoveMutation({
@@ -406,9 +522,32 @@ function AppContent() {
           endIndex: index,
           user: user,
         });
+        setFeedbackMessage(null);
       } catch (err) {
         console.error("Failed to make move via drop:", err);
+        logMoveFailure("Failed to execute move on the server.");
       }
+    } else {
+      const startR = Math.floor(draggedIndex / 8);
+      const startC = draggedIndex % 8;
+      const startName = `${String.fromCharCode(65 + startC)}${8 - startR}`;
+      const cell = activeGame.board[index];
+      
+      let reason = `Square ${squareName} is not a valid destination.`;
+      if ((r + c) % 2 === 0) {
+        reason = `Square ${squareName} is not playable (must be a dark square).`;
+      } else if (cell !== null) {
+        reason = `Square ${squareName} is occupied.`;
+      } else {
+        const allMoves = getAvailableMoves(activeGame.board, userColor!, activeGame.pendingCapture);
+        const capturesExist = allMoves.some((m) => m.isCapture);
+        if (capturesExist) {
+          reason = `Move to ${squareName} is invalid because checkers rules force you to make a capture move.`;
+        } else {
+          reason = `Move to ${squareName} is invalid (not a standard diagonal move for this piece).`;
+        }
+      }
+      logMoveFailure(`Cannot drop piece from ${startName} to ${squareName}: ${reason}`);
     }
 
     setSelectedPieceIndex(null);
@@ -689,6 +828,12 @@ function AppContent() {
               <div className="status-value">{activeGame.status.toUpperCase()}</div>
             </div>
           </div>
+
+          {feedbackMessage && (
+            <div className="feedback-banner" role="alert">
+              &gt; {feedbackMessage.toUpperCase()}
+            </div>
+          )}
 
           {/* Checkerboard Wrapper */}
           <div

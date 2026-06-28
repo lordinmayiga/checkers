@@ -416,3 +416,29 @@
   box-shadow: inset 0 0 8px rgba(56, 189, 248, 0.3);
   pointer-events: none;
 }
+
+/* Feedback / click warning banner */
+.feedback-banner {
+  width: 100%;
+  max-width: 500px;
+  background-color: var(--panel-bg);
+  border: var(--border-width) solid var(--neon-pink);
+  box-shadow: 4px 4px 0px var(--border-color);
+  color: #fca5a5; /* Light red/pink text */
+  padding: 10px 14px;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: bold;
+  text-align: center;
+  position: relative;
+  margin-bottom: 8px;
+  animation: shake 0.3s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes shake {
+  10%, 90% { transform: translate3d(-1px, 0, 0); }
+  20%, 80% { transform: translate3d(2px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+  40%, 60% { transform: translate3d(4px, 0, 0); }
+}
+
