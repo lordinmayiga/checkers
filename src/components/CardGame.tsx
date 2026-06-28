@@ -241,7 +241,7 @@ export const CardGame: React.FC<CardGameProps> = ({ user, gameId, onLeave }) => 
       const animKey = `play-${cardId}-${Date.now()}`;
       
       // Dynamic chiptune play/attack/cut sound effects triggers
-      const { rank, suit, isRed } = parseCardId(cardId);
+      const { rank, suit } = parseCardId(cardId);
       const isJoker = cardId === "JOK_R" || cardId === "JOK_B";
       const isAttack = isJoker || rank === "2" || rank === "3";
       const isCut = rank === "7" && suit === game.cutterSuit;
