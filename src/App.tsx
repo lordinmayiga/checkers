@@ -6,6 +6,7 @@ import { Lobby } from "./components/Lobby";
 import "./App.css";
 
 import { getAvailableMoves } from "../convex/checkersRules";
+import { soundManager } from "./utils/sound";
 
 // Initialize Convex client
 const convexUrl = import.meta.env.VITE_CONVEX_URL;
@@ -38,22 +39,102 @@ function AppContent() {
   const [user, setUser] = useState<string | null>(null);
   const [activeGameId, setActiveGameId] = useState<string | null>(null);
   
+  // Mobile layout state variables
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isNavbarVisible, setIsNavbarVisible] = useState(true);
+  const [detailsExpanded, setDetailsExpanded] = useState(false);
+
+  // Toast notifications
+  const [toast, setToast] = useState<string | null>(null);
+  const toastTimeoutRef = useRef<any>(null);
+
+  const triggerToast = (msg: string) => {
+    setToast(msg);
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    toastTimeoutRef.current = setTimeout(() => {
+      setToast(null);
+    }, 3000);
+  };
+
+  // Scroll handling for mobile navbar auto-fade
+  const lastScrollTop = useRef(0);
+  const navbarTimeoutRef = useRef<any>(null);
+
+  const startNavbarFadeTimer = () => {
+    if (navbarTimeoutRef.current) clearTimeout(navbarTimeoutRef.current);
+    navbarTimeoutRef.current = setTimeout(() => {
+      setIsNavbarVisible(false);
+    }, 3000); // 3 seconds timeout
+  };
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.innerWidth <= 768) {
+        const scrollTop = window.scrollY || document.documentElement.scrollTop;
+        const delta = scrollTop - lastScrollTop.current;
+        
+        if (delta < -8) {
+          // Scrolling up - show navbar
+          setIsNavbarVisible(true);
+          startNavbarFadeTimer();
+        } else if (delta > 8 && scrollTop > 60) {
+          // Scrolling down - hide navbar immediately
+          setIsNavbarVisible(false);
+          if (navbarTimeoutRef.current) clearTimeout(navbarTimeoutRef.current);
+        }
+        lastScrollTop.current = scrollTop;
+      }
+    };
+
+    const handleInteraction = () => {
+      if (window.innerWidth <= 768) {
+        setIsNavbarVisible(true);
+        startNavbarFadeTimer();
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("touchstart", handleInteraction, { passive: true });
+    window.addEventListener("mousemove", handleInteraction, { passive: true });
+
+    startNavbarFadeTimer();
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("touchstart", handleInteraction);
+      window.removeEventListener("mousemove", handleInteraction);
+      if (navbarTimeoutRef.current) clearTimeout(navbarTimeoutRef.current);
+    };
+  }, []);
+
   // Local game interaction state
   const [selectedPieceIndex, setSelectedPieceIndex] = useState<number | null>(null);
   const [validDestinations, setValidDestinations] = useState<number[]>([]);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
   const feedbackTimeoutRef = useRef<any>(null);
 
+  const [soundMuted, setSoundMuted] = useState(soundManager.isMuted());
+
+  const handleToggleSound = () => {
+    const nextMuted = !soundMuted;
+    soundManager.setMuted(nextMuted);
+    setSoundMuted(nextMuted);
+  };
+
   useEffect(() => {
     return () => {
       if (feedbackTimeoutRef.current) {
         clearTimeout(feedbackTimeoutRef.current);
+      }
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current);
       }
     };
   }, []);
 
   const logMoveFailure = (msg: string) => {
     console.warn(`[Checkers Move Failure] ${msg}`);
+    soundManager.playError();
     setFeedbackMessage(msg);
     setAnnouncement(msg);
     if (feedbackTimeoutRef.current) {
@@ -81,6 +162,7 @@ function AppContent() {
   const joinGameMutation = useMutation(api.games.joinGame);
   const makeMoveMutation = useMutation(api.games.makeMove);
   const sendMessageMutation = useMutation(api.games.sendMessage);
+  const deleteGameMutation = useMutation(api.games.deleteGame);
 
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -113,6 +195,42 @@ function AppContent() {
     api.games.getMessages,
     activeGameId ? { gameId: activeGameId as any } : "skip"
   );
+
+  // Sound effects for Game Start and Game Over (Win/Loss)
+  const prevStatusRef = useRef<string | null>(null);
+  const prevActiveGameIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!activeGame) {
+      prevStatusRef.current = null;
+      prevActiveGameIdRef.current = null;
+      return;
+    }
+
+    const currentStatus = activeGame.status;
+    const currentGameId = activeGame._id;
+
+    if (currentGameId !== prevActiveGameIdRef.current) {
+      // Switched to or loaded a game in progress
+      if (currentStatus === "playing") {
+        soundManager.playGameStart();
+      }
+    } else {
+      // Status changed in the current game
+      if (prevStatusRef.current === "waiting" && currentStatus === "playing") {
+        soundManager.playGameStart();
+      } else if (prevStatusRef.current === "playing" && currentStatus === "finished") {
+        if (activeGame.winner === user) {
+          soundManager.playWin();
+        } else {
+          soundManager.playLoss();
+        }
+      }
+    }
+
+    prevStatusRef.current = currentStatus;
+    prevActiveGameIdRef.current = currentGameId;
+  }, [activeGame, user]);
 
   // Auto-join opponent if visiting direct link
   useEffect(() => {
@@ -150,6 +268,19 @@ function AppContent() {
       setPrevMessageCount(messages.length);
     }
   }, [messages, chatOpen, prevMessageCount, user]);
+
+  // Play sound when another user sends a chat message
+  const prevMessageLenRef = useRef<number>(0);
+  useEffect(() => {
+    if (!messages) return;
+    if (prevMessageLenRef.current > 0 && messages.length > prevMessageLenRef.current) {
+      const newestMsg = messages[messages.length - 1];
+      if (newestMsg.sender !== "System" && newestMsg.sender !== user) {
+        soundManager.playMessage();
+      }
+    }
+    prevMessageLenRef.current = messages.length;
+  }, [messages, user]);
 
   // Screen reader announcements
   useEffect(() => {
@@ -223,6 +354,22 @@ function AppContent() {
           fromIndices.push(i);
           toIndices.push(i);
         }
+      }
+    }
+
+    if (fromIndices.length > 0 || toIndices.length > 0) {
+      const prevPieceCount = prevBoard.filter((x) => x !== null).length;
+      const newPieceCount = newBoard.filter((x) => x !== null).length;
+
+      const prevKingCount = prevBoard.filter((x) => x === "WK" || x === "BK").length;
+      const newKingCount = newBoard.filter((x) => x === "WK" || x === "BK").length;
+
+      if (newKingCount > prevKingCount) {
+        soundManager.playKing();
+      } else if (newPieceCount < prevPieceCount) {
+        soundManager.playCapture();
+      } else {
+        soundManager.playMove();
       }
     }
 
@@ -658,6 +805,8 @@ function AppContent() {
         onLogout={handleLogout}
         onSelectGame={handleSelectGame}
         onJoinGameByCode={handleJoinGameByCode}
+        soundMuted={soundMuted}
+        onToggleSound={handleToggleSound}
       />
     );
   }
@@ -699,6 +848,19 @@ function AppContent() {
   const capturedWhite = 12 - whitePiecesCount;
   const capturedBlack = 12 - blackPiecesCount;
 
+  // Filter captured pieces lists from db, fallback to empty arrays
+  const capturedWhiteList = (activeGame.capturedPieces ?? []).filter((p) => p.startsWith("W"));
+  const capturedBlackList = (activeGame.capturedPieces ?? []).filter((p) => p.startsWith("B"));
+
+  // Fallbacks for legacy games where capturedPieces wasn't populated yet
+  const displayWhiteCaptured = capturedWhiteList.length > 0
+    ? capturedWhiteList
+    : Array(capturedWhite).fill("W");
+  const displayBlackCaptured = capturedBlackList.length > 0
+    ? capturedBlackList
+    : Array(capturedBlack).fill("B");
+
+
   const isFlipped = userColor === "B";
   const boardIndices = Array.from({ length: 64 }, (_, i) => isFlipped ? 63 - i : i);
 
@@ -709,8 +871,56 @@ function AppContent() {
         {announcement}
       </div>
 
+      {/* Mobile Top Navbar */}
+      <nav className={`mobile-navbar ${isNavbarVisible ? "" : "navbar-hidden"}`}>
+        <div className="mobile-navbar-left">
+          <button className="hamburger-btn" onClick={() => setMobileMenuOpen(true)} aria-label="Open Menu">
+            ☰
+          </button>
+          <span className="mobile-navbar-title">BRUTAL CHECKERS</span>
+        </div>
+        <div className="mobile-navbar-right">
+          <button
+            className="brutal-button action-btn mobile-action-btn"
+            onClick={handleToggleSound}
+            title={soundMuted ? "Unmute Sounds" : "Mute Sounds"}
+            style={{ width: "36px", height: "36px", fontSize: "0.9rem" }}
+          >
+            {soundMuted ? "🔇" : "🔊"}
+          </button>
+          <button
+            className="brutal-button action-btn mobile-action-btn"
+            onClick={() => {
+              const matchId = activeGameId.slice(-6).toUpperCase();
+              navigator.clipboard.writeText(matchId);
+              triggerToast(`Match ID: ${matchId} copied to clipboard!`);
+            }}
+            title="Copy Match ID"
+            style={{ width: "36px", height: "36px", fontSize: "0.9rem" }}
+          >
+            🔗
+          </button>
+          <button
+            className={`brutal-button action-btn mobile-action-btn ${unreadCount > 0 ? "has-unread" : ""}`}
+            onClick={() => {
+              setChatOpen((prev) => !prev);
+              setUnreadCount(0);
+            }}
+            title="Toggle Chat & Logs"
+            style={{ width: "36px", height: "36px", fontSize: "0.9rem", position: "relative" }}
+          >
+            💬 {unreadCount > 0 && <span className="unread-badge" style={{ width: "16px", height: "16px", fontSize: "0.55rem", top: "-5px", right: "-5px" }}>{unreadCount}</span>}
+          </button>
+        </div>
+      </nav>
+
+      {/* Mobile Drawer Backdrop */}
+      {mobileMenuOpen && (
+        <div className="mobile-drawer-backdrop" onClick={() => setMobileMenuOpen(false)} />
+      )}
+
       {/* Left Sidebar */}
-      <aside className="sidebar">
+      <aside className={`sidebar ${mobileMenuOpen ? "mobile-open" : ""}`}>
         <div className="sidebar-header">
           <h2 style={{ fontSize: "1.4rem" }}>BRUTAL CHECKERS</h2>
           <div className="sidebar-version">V.1.0.4-STABLE</div>
@@ -734,13 +944,37 @@ function AppContent() {
 
           <button
             className="brutal-button primary"
-            onClick={handleLeaveGame}
+            onClick={() => {
+              setMobileMenuOpen(false);
+              handleLeaveGame();
+            }}
             style={{ width: "100%", padding: "14px" }}
           >
             ← LEAVE GAME
           </button>
 
+          <button
+            className="brutal-button"
+            onClick={async () => {
+              if (confirm("Are you sure you want to end and delete this game? This will boot both players and erase all match data.")) {
+                try {
+                  setMobileMenuOpen(false);
+                  await deleteGameMutation({ gameId: activeGame._id });
+                  handleLeaveGame();
+                } catch (err) {
+                  console.error("Failed to delete active game:", err);
+                  alert("Failed to end game.");
+                }
+              }
+            }}
+            style={{ width: "100%", padding: "14px", marginTop: "10px", backgroundColor: "#991b1b", color: "#fff" }}
+          >
+            ☠ END & DELETE GAME
+          </button>
+
+          {/* Opponent Info (Desktop Only) */}
           <div
+            className="mobile-hide"
             style={{
               border: "3px solid #000",
               padding: "12px",
@@ -760,12 +994,56 @@ function AppContent() {
                 : `${p1Color === "W" ? "BLACK" : "WHITE"} (JOINED)`}
             </div>
           </div>
+
+          {/* Mobile Accordion for details hidden on main view */}
+          <div className="drawer-accordion brutal-border desktop-hide" style={{ marginTop: "auto" }}>
+            <button
+              type="button"
+              className="drawer-accordion-header"
+              onClick={() => setDetailsExpanded(!detailsExpanded)}
+            >
+              <span>MATCH DETAILS & HELP</span>
+              <span>{detailsExpanded ? "▲" : "▼"}</span>
+            </button>
+            {detailsExpanded && (
+              <div className="drawer-accordion-content">
+                <div style={{ marginBottom: "16px" }}>
+                  <div style={{ fontWeight: "bold", fontSize: "0.8rem", color: "#aaa", borderBottom: "1px solid #444", paddingBottom: "4px", marginBottom: "8px" }}>
+                    OPPONENT INFO
+                  </div>
+                  <div style={{ fontSize: "0.95rem" }}>
+                    NAME: <strong style={{ color: "var(--light-green)" }}>{opponent}</strong>
+                  </div>
+                  <div style={{ fontSize: "0.85rem", color: "#aaa", marginTop: "4px" }}>
+                    ROLE: {isPlayer1
+                      ? `${p1Color === "W" ? "WHITE" : "BLACK"} (CREATOR)`
+                      : `${p1Color === "W" ? "BLACK" : "WHITE"} (JOINED)`}
+                  </div>
+                </div>
+                
+                <div>
+                  <div style={{ fontWeight: "bold", fontSize: "0.8rem", color: "#aaa", borderBottom: "1px solid #444", paddingBottom: "4px", marginBottom: "8px" }}>
+                    KEYBOARD INPUTS
+                  </div>
+                  <div style={{ fontSize: "0.8rem", lineHeight: "1.4", fontFamily: "var(--font-mono)", color: "#fff" }}>
+                    <div>• TAB: Select board</div>
+                    <div>• ARROWS: Move grid focus</div>
+                    <div>• ENTER/SPACE: Click square</div>
+                    <div>• ESC: Deselect piece</div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="sidebar-footer">
           <button
             className="brutal-button sidebar-footer-btn"
-            onClick={handleLogout}
+            onClick={() => {
+              setMobileMenuOpen(false);
+              handleLogout();
+            }}
             style={{ padding: "10px" }}
           >
             LOGOUT / SWITCH PLAYER
@@ -775,17 +1053,24 @@ function AppContent() {
 
       {/* Main Panel */}
       <main className="main-layout">
-        <header className="top-bar">
+        <header className="top-bar mobile-hide">
           <div className="logo-text">MATCH ID // {activeGameId.slice(-6).toUpperCase()}</div>
           <div style={{ display: "flex", gap: "10px" }}>
             <button
               className="brutal-button action-btn"
+              onClick={handleToggleSound}
+              title={soundMuted ? "Unmute Sounds" : "Mute Sounds"}
+            >
+              {soundMuted ? "🔇" : "🔊"}
+            </button>
+            <button
+              className="brutal-button action-btn"
               onClick={() => {
-                const link = `${window.location.origin}${window.location.pathname}?gameId=${activeGameId}`;
-                navigator.clipboard.writeText(link);
-                alert("Invite link copied to clipboard!");
+                const matchId = activeGameId.slice(-6).toUpperCase();
+                navigator.clipboard.writeText(matchId);
+                triggerToast(`Match ID: ${matchId} copied to clipboard!`);
               }}
-              title="Copy Game Link"
+              title="Copy Match ID"
             >
               🔗
             </button>
@@ -939,50 +1224,47 @@ function AppContent() {
           </div>
 
           {/* Under board details (Stats & Controls info) */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: "20px",
-              width: "100%",
-              maxWidth: "500px",
-              marginTop: "12px",
-            }}
-          >
+          <div className="details-grid-container">
             {/* Capture Stats */}
-            <div
-              className="brutal-border brutal-shadow-small"
-              style={{
-                backgroundColor: "var(--panel-bg)",
-                padding: "12px",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "flex-start",
-                justifyContent: "center",
-                fontWeight: "bold",
-                fontSize: "1.1rem",
-              }}
-            >
+            <div className="brutal-border brutal-shadow-small captured-panel">
               <div
                 style={{
                   fontSize: "0.8rem",
                   borderBottom: "2px solid var(--border-color)",
                   width: "100%",
                   paddingBottom: "4px",
-                  marginBottom: "8px",
+                  fontWeight: "bold",
                 }}
               >
                 CAPTURED PIECES
               </div>
-              <div style={{ display: "flex", gap: "20px" }}>
-                <div>WHITE: {capturedWhite}</div>
-                <div>BLACK: {capturedBlack}</div>
+              <div className="captured-row">
+                <div className="captured-label">BY BLACK (WHITE):</div>
+                <div className="captured-list">
+                  {displayWhiteCaptured.map((p, idx) => (
+                    <div key={idx} className="captured-piece white" title={p === "WK" ? "Captured White King" : "Captured White Pawn"}>
+                      {p === "WK" && <span className="king-crown">👑</span>}
+                    </div>
+                  ))}
+                  {displayWhiteCaptured.length === 0 && <span style={{ fontSize: "0.8rem", color: "#555" }}>NONE</span>}
+                </div>
+              </div>
+              <div className="captured-row">
+                <div className="captured-label">BY WHITE (BLACK):</div>
+                <div className="captured-list">
+                  {displayBlackCaptured.map((p, idx) => (
+                    <div key={idx} className="captured-piece black" title={p === "BK" ? "Captured Black King" : "Captured Black Pawn"}>
+                      {p === "BK" && <span className="king-crown">👑</span>}
+                    </div>
+                  ))}
+                  {displayBlackCaptured.length === 0 && <span style={{ fontSize: "0.8rem", color: "#555" }}>NONE</span>}
+                </div>
               </div>
             </div>
 
-            {/* Help panel for accessibility/controls */}
+            {/* Help panel for accessibility/controls (Desktop Only) */}
             <div
-              className="brutal-border brutal-shadow-small"
+              className="brutal-border brutal-shadow-small mobile-hide"
               style={{
                 backgroundColor: "var(--panel-bg)",
                 padding: "12px",
@@ -1048,6 +1330,13 @@ function AppContent() {
           </button>
         </form>
       </aside>
+
+      {/* Brutalist Toast Notification */}
+      {toast && (
+        <div className="brutal-toast brutal-border brutal-shadow-small">
+          &gt; {toast.toUpperCase()}
+        </div>
+      )}
     </div>
   );
 }

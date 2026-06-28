@@ -363,17 +363,95 @@ h2 {
 @media (max-width: 768px) {
   .app-container {
     flex-direction: column;
+    height: auto;
+    min-height: 100vh;
+    overflow-x: hidden;
   }
   .sidebar {
-    width: 100%;
-    height: auto;
-    position: relative;
-    border-right: none;
-    border-bottom: var(--border-width) solid var(--border-color);
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    height: 100vh !important;
+    width: 280px !important;
+    z-index: 150;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-right: var(--border-width) solid var(--border-color);
+    border-bottom: none;
+    box-shadow: 8px 0 0 rgba(0, 0, 0, 0.6);
+  }
+  .sidebar.mobile-open {
+    transform: translateX(0);
   }
   .sidebar-content {
-    display: none; /* Hide standard navigation on mobile */
+    display: flex; /* Show contents when in drawer */
+    overflow-y: auto;
   }
+  .mobile-navbar {
+    display: flex !important;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background-color: var(--panel-bg);
+    border-bottom: var(--border-width) solid var(--border-color);
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    z-index: 100;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .mobile-navbar.navbar-hidden {
+    opacity: 0;
+    transform: translateY(-100%);
+    pointer-events: none;
+  }
+  .mobile-navbar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .mobile-navbar-title {
+    font-weight: 900;
+    font-size: 1.1rem;
+    letter-spacing: -0.5px;
+    text-transform: uppercase;
+  }
+  .mobile-navbar-right {
+    display: flex;
+    gap: 8px;
+  }
+  .hamburger-btn {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    font-size: 1.8rem;
+    cursor: pointer;
+    line-height: 1;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .mobile-drawer-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(6, 8, 14, 0.75);
+    backdrop-filter: blur(4px);
+    z-index: 140;
+    animation: fadeIn 0.2s ease-out;
+  }
+}
+
+.mobile-navbar {
+  display: none;
 }
 
 /* Visually hide screen reader announcements */
@@ -388,3 +466,5 @@ h2 {
   white-space: nowrap;
   border: 0;
 }
+
+

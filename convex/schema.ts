@@ -7,6 +7,7 @@ export default defineSchema({
     player2: v.optional(v.string()), // Name of opponent
     player1Color: v.optional(v.string()), // Creator color: "W" or "B"
     board: v.array(v.union(v.null(), v.string())), // 64-length array of "W" | "WK" | "B" | "BK" | null
+    capturedPieces: v.optional(v.array(v.string())), // List of pieces captured so far: "W" | "WK" | "B" | "BK"
     turn: v.string(), // "W" or "B"
     status: v.string(), // "waiting" | "playing" | "finished"
     winner: v.optional(v.string()), // Winner's name

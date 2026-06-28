@@ -318,27 +318,128 @@
   font-weight: bold;
 }
 
-/* Responsive CSS for Mobile Bottom Sheet Chat */
+/* Responsive CSS for Stacked Chat and Visual Captured Stats */
 @media (max-width: 768px) {
   .chat-panel {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    position: relative;
     width: 100% !important;
-    height: 55vh;
+    height: 480px;
     border-left: none;
     border-top: var(--border-width) solid var(--border-color);
-    transform: translateY(0);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.5);
+    box-shadow: none;
+    transition: none;
   }
   .chat-panel.closed {
-    width: 100%;
-    transform: translateY(100%);
-    border-top-width: 0;
+    display: none;
+  }
+  .mobile-hide {
+    display: none !important;
+  }
+  .main-layout {
+    padding-top: 60px; /* Header spacing */
   }
 }
+
+/* Visual Captured Pieces Stats Styles */
+.captured-panel {
+  width: 100%;
+  max-width: 500px;
+  background-color: var(--panel-bg);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.captured-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.captured-label {
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: #888;
+  min-width: 120px;
+}
+.captured-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.captured-piece {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #000;
+  box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.6);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.captured-piece.white {
+  background: radial-gradient(circle at 30% 30%, #ffffff 0%, #cbd5e1 55%, #94a3b8 100%);
+}
+.captured-piece.black {
+  background: radial-gradient(circle at 30% 30%, #475569 0%, #1e293b 50%, #020617 100%);
+}
+.captured-piece .king-crown {
+  font-size: 0.6rem;
+  line-height: 1;
+  animation: none !important;
+  transform: none !important;
+}
+
+/* Mobile Drawer Accordion Menu styles */
+.drawer-accordion {
+  border: 2px solid #000;
+  margin-top: 10px;
+  background-color: #000;
+}
+.drawer-accordion-header {
+  width: 100%;
+  padding: 12px;
+  background-color: var(--highlight-color);
+  color: #000;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.drawer-accordion-content {
+  padding: 12px;
+  background-color: var(--panel-bg);
+  border-top: 2px solid #000;
+}
+
+/* Layout helper for details below board */
+.details-grid-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  width: 100%;
+  max-width: 500px;
+  margin-top: 12px;
+}
+
+@media (max-width: 768px) {
+  .details-grid-container {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+@media (min-width: 769px) {
+  .desktop-hide {
+    display: none !important;
+  }
+}
+
+
 
 /* Modal Dialog & Overlay Styles */
 .modal-overlay {
@@ -441,4 +542,55 @@
   30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
   40%, 60% { transform: translate3d(4px, 0, 0); }
 }
+
+/* Custom Brutalist Toast Styling */
+.brutal-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background-color: var(--panel-bg);
+  color: var(--light-green);
+  border: var(--border-width) solid var(--light-green);
+  padding: 14px 20px;
+  font-family: var(--font-mono);
+  font-weight: bold;
+  z-index: 1000;
+  box-shadow: 4px 4px 0px #000;
+  animation: slideInRight 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(120%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .brutal-toast {
+    bottom: auto;
+    top: 80px;
+    right: 16px;
+    left: 16px;
+    text-align: center;
+    box-shadow: 3px 3px 0px #000;
+    animation: fadeInToast 0.22s ease-out both;
+  }
+}
+
+@keyframes fadeInToast {
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
 

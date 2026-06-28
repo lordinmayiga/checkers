@@ -1,4 +1,7 @@
 import React, { useState } from "react";
+import { useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
+
 
 interface Game {
   _id: string;
@@ -18,6 +21,8 @@ interface LobbyProps {
   onLogout: () => void;
   onSelectGame: (gameId: string) => void;
   onJoinGameByCode: (code: string) => Promise<string>;
+  soundMuted: boolean;
+  onToggleSound: () => void;
 }
 
 export const Lobby: React.FC<LobbyProps> = ({
@@ -27,8 +32,65 @@ export const Lobby: React.FC<LobbyProps> = ({
   onLogout,
   onSelectGame,
   onJoinGameByCode,
+  soundMuted,
+  onToggleSound,
 }) => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Mobile layout state variables
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isNavbarVisible, setIsNavbarVisible] = useState(true);
+
+  // Scroll handling for mobile navbar auto-fade
+  const lastScrollTop = React.useRef(0);
+  const navbarTimeoutRef = React.useRef<any>(null);
+
+  const startNavbarFadeTimer = () => {
+    if (navbarTimeoutRef.current) clearTimeout(navbarTimeoutRef.current);
+    navbarTimeoutRef.current = setTimeout(() => {
+      setIsNavbarVisible(false);
+    }, 3000); // 3 seconds timeout
+  };
+
+  React.useEffect(() => {
+    const handleScroll = () => {
+      if (window.innerWidth <= 768) {
+        const scrollTop = window.scrollY || document.documentElement.scrollTop;
+        const delta = scrollTop - lastScrollTop.current;
+        
+        if (delta < -8) {
+          // Scrolling up - show navbar
+          setIsNavbarVisible(true);
+          startNavbarFadeTimer();
+        } else if (delta > 8 && scrollTop > 60) {
+          // Scrolling down - hide navbar immediately
+          setIsNavbarVisible(false);
+          if (navbarTimeoutRef.current) clearTimeout(navbarTimeoutRef.current);
+        }
+        lastScrollTop.current = scrollTop;
+      }
+    };
+
+    const handleInteraction = () => {
+      if (window.innerWidth <= 768) {
+        setIsNavbarVisible(true);
+        startNavbarFadeTimer();
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("touchstart", handleInteraction, { passive: true });
+    window.addEventListener("mousemove", handleInteraction, { passive: true });
+
+    startNavbarFadeTimer();
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("touchstart", handleInteraction);
+      window.removeEventListener("mousemove", handleInteraction);
+      if (navbarTimeoutRef.current) clearTimeout(navbarTimeoutRef.current);
+    };
+  }, []);
 
   // Modal states
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
@@ -36,6 +98,19 @@ export const Lobby: React.FC<LobbyProps> = ({
   const [matchCode, setMatchCode] = useState("");
   const [isJoining, setIsJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const deleteGameMutation = useMutation(api.games.deleteGame);
+
+  const handleDeleteGame = async (gameId: string) => {
+    if (confirm("Are you sure you want to end and delete this game? This will erase all match history and messages.")) {
+      try {
+        await deleteGameMutation({ gameId: gameId as any });
+      } catch (err) {
+        console.error("Failed to delete game:", err);
+        alert("Failed to delete game.");
+      }
+    }
+  };
 
   const handleJoinSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,8 +139,33 @@ export const Lobby: React.FC<LobbyProps> = ({
 
   return (
     <div className="app-container">
+      {/* Mobile Top Navbar */}
+      <nav className={`mobile-navbar ${isNavbarVisible ? "" : "navbar-hidden"}`}>
+        <div className="mobile-navbar-left">
+          <button className="hamburger-btn" onClick={() => setMobileMenuOpen(true)} aria-label="Open Menu">
+            ☰
+          </button>
+          <span className="mobile-navbar-title">GAME OPS LOBBY</span>
+        </div>
+        <div className="mobile-navbar-right">
+          <button
+            className="brutal-button action-btn mobile-action-btn"
+            onClick={onToggleSound}
+            title={soundMuted ? "Unmute Sounds" : "Mute Sounds"}
+            style={{ width: "36px", height: "36px", fontSize: "0.9rem" }}
+          >
+            {soundMuted ? "🔇" : "🔊"}
+          </button>
+        </div>
+      </nav>
+
+      {/* Mobile Drawer Backdrop */}
+      {mobileMenuOpen && (
+        <div className="mobile-drawer-backdrop" onClick={() => setMobileMenuOpen(false)} />
+      )}
+
       {/* Sidebar */}
-      <aside className="sidebar">
+      <aside className={`sidebar ${mobileMenuOpen ? "mobile-open" : ""}`}>
         <div className="sidebar-header">
           <h2 style={{ fontSize: "1.4rem" }}>BRUTAL CHECKERS</h2>
           <div className="sidebar-version">V.1.0.4-STABLE</div>
@@ -84,7 +184,10 @@ export const Lobby: React.FC<LobbyProps> = ({
 
           <button
             className="brutal-button primary"
-            onClick={() => setIsColorModalOpen(true)}
+            onClick={() => {
+              setMobileMenuOpen(false);
+              setIsColorModalOpen(true);
+            }}
             style={{ width: "100%", padding: "14px", marginTop: "10px" }}
           >
             + NEW GAME
@@ -92,7 +195,10 @@ export const Lobby: React.FC<LobbyProps> = ({
 
           <button
             className="brutal-button accent"
-            onClick={() => setIsJoinModalOpen(true)}
+            onClick={() => {
+              setMobileMenuOpen(false);
+              setIsJoinModalOpen(true);
+            }}
             style={{ width: "100%", padding: "14px", marginTop: "10px" }}
           >
             → JOIN BY ID
@@ -100,7 +206,10 @@ export const Lobby: React.FC<LobbyProps> = ({
 
           <button
             className="brutal-button"
-            onClick={onLogout}
+            onClick={() => {
+              setMobileMenuOpen(false);
+              onLogout();
+            }}
             style={{ width: "100%", padding: "14px", marginTop: "10px", backgroundColor: "#334155" }}
           >
             ↩ LOGOUT / SWITCH
@@ -110,7 +219,10 @@ export const Lobby: React.FC<LobbyProps> = ({
         <div className="sidebar-footer">
           <button
             className="brutal-button sidebar-footer-btn"
-            onClick={onLogout}
+            onClick={() => {
+              setMobileMenuOpen(false);
+              onLogout();
+            }}
             style={{ padding: "10px" }}
           >
             LOGOUT / SWITCH PLAYER
@@ -120,10 +232,27 @@ export const Lobby: React.FC<LobbyProps> = ({
 
       {/* Main Panel */}
       <main className="main-layout">
-        <header className="top-bar">
+        <header className="top-bar mobile-hide">
           <div className="logo-text">GAME OPS LOBBY</div>
-          <div style={{ fontSize: "1rem", fontWeight: "bold" }}>
-            ONLINE // CONVEX COMPILER ACTIVE
+          <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+            <button
+              className="brutal-button"
+              onClick={onToggleSound}
+              title={soundMuted ? "Unmute Sounds" : "Mute Sounds"}
+              style={{
+                padding: "6px 10px",
+                fontSize: "1rem",
+                boxShadow: "2px 2px 0px #000",
+                backgroundColor: "#1e293b",
+                border: "2px solid #000",
+                cursor: "pointer",
+              }}
+            >
+              {soundMuted ? "🔇" : "🔊"}
+            </button>
+            <div style={{ fontSize: "1rem", fontWeight: "bold" }}>
+              ONLINE // CONVEX COMPILER ACTIVE
+            </div>
           </div>
         </header>
 
@@ -237,6 +366,14 @@ export const Lobby: React.FC<LobbyProps> = ({
                           onClick={() => copyInviteLink(game._id)}
                         >
                           {copiedId === game._id ? "LINK COPIED!" : "COPY LINK"}
+                        </button>
+                        <button
+                          className="brutal-button"
+                          onClick={() => handleDeleteGame(game._id)}
+                          style={{ backgroundColor: "#991b1b", color: "#fff" }}
+                          title="Delete game from registry"
+                        >
+                          DELETE
                         </button>
                       </div>
                     </div>

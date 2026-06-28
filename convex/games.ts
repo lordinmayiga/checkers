@@ -34,6 +34,7 @@ export const createGame = mutation({
       player1: args.player1,
       player1Color: args.player1Color,
       board,
+      capturedPieces: [],
       turn: "W", // White starts
       status: "waiting", // Starts in waiting status until player 2 joins
     });
@@ -257,7 +258,12 @@ export const makeMove = mutation({
 
     let systemMsgText = `${args.user} moved from ${getSquareNotation(args.startIndex)} to ${getSquareNotation(args.endIndex)}`;
 
+    let updatedCaptured = [...(game.capturedPieces ?? [])];
     if (matchingMove.isCapture && matchingMove.capturedPieceIndex !== undefined) {
+      const capturedPiece = board[matchingMove.capturedPieceIndex];
+      if (capturedPiece !== null) {
+        updatedCaptured.push(capturedPiece);
+      }
       newBoard[matchingMove.capturedPieceIndex] = null;
       systemMsgText = `${args.user} captured at ${getSquareNotation(matchingMove.capturedPieceIndex)} (jumped ${getSquareNotation(args.startIndex)} -> ${getSquareNotation(args.endIndex)})`;
     }
@@ -314,6 +320,7 @@ export const makeMove = mutation({
     // Save game state
     await ctx.db.patch(args.gameId, {
       board: newBoard,
+      capturedPieces: updatedCaptured,
       turn: nextTurn,
       pendingCapture: nextPendingCapture,
       status: nextStatus,
