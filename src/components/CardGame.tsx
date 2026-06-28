@@ -23,8 +23,8 @@ function parseCardId(cardId: string) {
 }
 
 export const CardGame: React.FC<CardGameProps> = ({ user, gameId, onLeave }) => {
-  const game = useQuery(api.cardGame.getCardGame, { gameId: gameId as any });
-  const messages = useQuery(api.cardGame.getCardMessages, { gameId: gameId as any });
+  const game = useQuery(api.cardGame.getCardGame, gameId ? { gameId: gameId as any } : "skip");
+  const messages = useQuery(api.cardGame.getCardMessages, gameId ? { gameId: gameId as any } : "skip");
 
   const startGame = useMutation(api.cardGame.startCardGame);
   const playCardMutation = useMutation(api.cardGame.playCard);

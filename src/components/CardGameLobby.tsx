@@ -29,7 +29,7 @@ export const CardGameLobby: React.FC<CardGameLobbyProps> = ({
   onToggleSound,
   onLogout,
 }) => {
-  const games = useQuery(api.cardGame.getCardGames, { user });
+  const games = useQuery(api.cardGame.getCardGames, user ? { user } : "skip");
   const createGame = useMutation(api.cardGame.createCardGame);
   const joinGame = useMutation(api.cardGame.joinCardGame);
   const deleteGame = useMutation(api.cardGame.deleteCardGame);
