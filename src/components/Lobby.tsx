@@ -23,6 +23,7 @@ interface LobbyProps {
   onJoinGameByCode: (code: string) => Promise<string>;
   soundMuted: boolean;
   onToggleSound: () => void;
+  onSwitchToCards?: () => void;
 }
 
 export const Lobby: React.FC<LobbyProps> = ({
@@ -34,6 +35,7 @@ export const Lobby: React.FC<LobbyProps> = ({
   onJoinGameByCode,
   soundMuted,
   onToggleSound,
+  onSwitchToCards,
 }) => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -232,9 +234,15 @@ export const Lobby: React.FC<LobbyProps> = ({
 
       {/* Main Panel */}
       <main className="main-layout">
-        <header className="top-bar mobile-hide">
+        <div className="top-bar mobile-hide">
           <div className="logo-text">GAME OPS LOBBY</div>
           <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+            <div className="game-switcher">
+              <button className="game-switcher-btn active">♟ CHECKERS</button>
+              {onSwitchToCards && (
+                <button className="game-switcher-btn" onClick={onSwitchToCards}>🃏 CARDS</button>
+              )}
+            </div>
             <button
               className="brutal-button"
               onClick={onToggleSound}
@@ -254,7 +262,7 @@ export const Lobby: React.FC<LobbyProps> = ({
               ONLINE // CONVEX COMPILER ACTIVE
             </div>
           </div>
-        </header>
+        </div>
 
         <div className="lobby-container">
           <div className="lobby-header">

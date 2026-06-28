@@ -259,6 +259,107 @@ class SoundManager {
     playTone(659.25, now, 0.08);
     playTone(880.00, now + 0.05, 0.12);
   }
+
+  playCardDeal() {
+    if (this.muted) return;
+    const ctx = this.getAudioContext();
+    if (!ctx) return;
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(450, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(150, ctx.currentTime + 0.05);
+
+    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start();
+    osc.stop(ctx.currentTime + 0.05);
+  }
+
+  playCardPlay() {
+    if (this.muted) return;
+    const ctx = this.getAudioContext();
+    if (!ctx) return;
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(250, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.08);
+
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start();
+    osc.stop(ctx.currentTime + 0.08);
+  }
+
+  playCardAttack() {
+    if (this.muted) return;
+    const ctx = this.getAudioContext();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+    const playTone = (freq: number, delay: number, dur: number) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const filter = ctx.createBiquadFilter();
+
+      osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(freq, now + delay);
+      osc.frequency.linearRampToValueAtTime(freq * 0.7, now + delay + dur);
+
+      filter.type = "lowpass";
+      filter.frequency.setValueAtTime(800, now + delay);
+
+      gain.gain.setValueAtTime(0.12, now + delay);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + delay + dur);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(now + delay);
+      osc.stop(now + delay + dur);
+    };
+
+    // Staggered aggressive arpeggio
+    playTone(330, 0, 0.15); // E4
+    playTone(392, 0.06, 0.15); // G4
+    playTone(523.25, 0.12, 0.25); // C5
+  }
+
+  playCardCut() {
+    if (this.muted) return;
+    const ctx = this.getAudioContext();
+    if (!ctx) return;
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(440, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1500, ctx.currentTime + 0.25);
+
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start();
+    osc.stop(ctx.currentTime + 0.25);
+  }
 }
 
 export const soundManager = new SoundManager();

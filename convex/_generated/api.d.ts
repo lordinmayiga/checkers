@@ -8,6 +8,8 @@
  * @module
  */
 
+import type * as cardGame from "../cardGame.js";
+import type * as cardGameRules from "../cardGameRules.js";
 import type * as checkersRules from "../checkersRules.js";
 import type * as games from "../games.js";
 
@@ -18,6 +20,8 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  cardGame: typeof cardGame;
+  cardGameRules: typeof cardGameRules;
   checkersRules: typeof checkersRules;
   games: typeof games;
 }>;

@@ -3,6 +3,8 @@ import { ConvexProvider, ConvexReactClient, useQuery, useMutation } from "convex
 import { api } from "../convex/_generated/api";
 import { LoginGate } from "./components/LoginGate";
 import { Lobby } from "./components/Lobby";
+import { CardGame } from "./components/CardGame";
+import { CardGameLobby } from "./components/CardGameLobby";
 import "./App.css";
 
 import { getAvailableMoves } from "../convex/checkersRules";
@@ -38,6 +40,8 @@ function extractGameIdOrCode(input: string): string {
 function AppContent() {
   const [user, setUser] = useState<string | null>(null);
   const [activeGameId, setActiveGameId] = useState<string | null>(null);
+  const [activeGame_mode, setActiveGame_mode] = useState<"checkers" | "cards">("checkers");
+  const [activeCardGameId, setActiveCardGameId] = useState<string | null>(null);
   
   // Mobile layout state variables
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -173,6 +177,15 @@ function AppContent() {
     const gameId = params.get("gameId");
     if (gameId) {
       setActiveGameId(gameId);
+    }
+    const cardGameId = params.get("cardGameId");
+    if (cardGameId) {
+      setActiveCardGameId(cardGameId);
+      setActiveGame_mode("cards");
+    }
+    const mode = params.get("mode");
+    if (mode === "cards") {
+      setActiveGame_mode("cards");
     }
 
     const savedUser = localStorage.getItem("checkers_user");
@@ -433,6 +446,32 @@ function AppContent() {
     localStorage.removeItem("checkers_user");
     setUser(null);
     setActiveGameId(null);
+    setActiveCardGameId(null);
+    setActiveGame_mode("checkers");
+    window.history.pushState({}, "", window.location.pathname);
+  };
+
+  const handleEnterCardGame = (gameId: string) => {
+    setActiveCardGameId(gameId);
+    setActiveGame_mode("cards");
+    window.history.pushState({}, "", `?cardGameId=${gameId}`);
+  };
+
+  const handleLeaveCardGame = () => {
+    setActiveCardGameId(null);
+    window.history.pushState({}, "", `?mode=cards`);
+  };
+
+  const handleSwitchToCards = () => {
+    setActiveGame_mode("cards");
+    setActiveCardGameId(null);
+    setActiveGameId(null);
+    window.history.pushState({}, "", `?mode=cards`);
+  };
+
+  const handleSwitchToCheckers = () => {
+    setActiveGame_mode("checkers");
+    setActiveCardGameId(null);
     window.history.pushState({}, "", window.location.pathname);
   };
 
@@ -795,7 +834,30 @@ function AppContent() {
     return <LoginGate onLogin={handleLogin} />;
   }
 
-  // Lobby view
+  // ── CARDS GAME ROUTING ──
+  if (activeGame_mode === "cards") {
+    if (activeCardGameId) {
+      return (
+        <CardGame
+          user={user}
+          gameId={activeCardGameId}
+          onLeave={handleLeaveCardGame}
+        />
+      );
+    }
+    return (
+      <CardGameLobby
+        user={user}
+        onEnterGame={handleEnterCardGame}
+        onSwitchToCheckers={handleSwitchToCheckers}
+        soundMuted={soundMuted}
+        onToggleSound={handleToggleSound}
+        onLogout={handleLogout}
+      />
+    );
+  }
+
+  // ── CHECKERS LOBBY ──
   if (!activeGameId || !activeGame) {
     return (
       <Lobby
@@ -807,6 +869,7 @@ function AppContent() {
         onJoinGameByCode={handleJoinGameByCode}
         soundMuted={soundMuted}
         onToggleSound={handleToggleSound}
+        onSwitchToCards={handleSwitchToCards}
       />
     );
   }
