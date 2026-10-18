@@ -29,7 +29,7 @@ body.dark-mode{
 ::-webkit-scrollbar-thumb:hover{background:var(--muted)}
 ::-webkit-scrollbar-corner{background:transparent}
 *{box-sizing:border-box}
-html{scroll-behavior:smooth;scroll-padding-top:1rem}
+html{scroll-behavior:smooth;scroll-padding-top:4rem}
 body{margin:0;color:var(--ink);background:var(--wash);font:16px/1.62 system-ui,-apple-system,Segoe UI,sans-serif}
 a{color:var(--link)}
 main{max-width:1500px;margin:1rem auto;padding:0 1rem;display:grid;grid-template-columns:290px minmax(0,41rem) 290px;justify-content:center;gap:1rem;align-items:start}
@@ -148,12 +148,56 @@ label.num input{width:4.5rem;font:inherit;padding:.15rem .3rem;border:1px solid 
 @media (max-width:1250px){main{grid-template-columns:260px minmax(0,41rem)}aside{grid-column:1/-1}aside .sticky{position:static;max-height:none}}
 @media (max-width:820px){
   main{grid-template-columns:1fr;padding:0 0.35rem;margin:0.5rem auto;width:100%}
-  nav.toc-col{position:static;max-height:none}
-  article,nav.toc-col,aside .panel{padding:0.9rem 0.65rem;border-radius:8px}
+  #toc-toggle{display:none !important}
+  #toc-mobile-btn{display:inline-flex !important}
+  
+  /* Off-canvas mobile TOC drawer */
+  nav.toc-col{
+    position:fixed !important;
+    top:0 !important;
+    left:0 !important;
+    bottom:0 !important;
+    width:86% !important;
+    max-width:340px !important;
+    height:100vh !important;
+    max-height:100vh !important;
+    overflow-y:auto !important;
+    -webkit-overflow-scrolling:touch !important;
+    z-index:1001 !important;
+    background:var(--paper) !important;
+    box-shadow:4px 0 25px rgba(0,0,0,0.3) !important;
+    transform:translateX(-105%) !important;
+    transition:transform 0.26s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    border-radius:0 12px 12px 0 !important;
+    padding:1.2rem 1rem !important;
+  }
+  body.toc-open nav.toc-col{
+    transform:translateX(0) !important;
+  }
+  .toc-backdrop{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.5);
+    backdrop-filter:blur(2px);
+    z-index:1000;
+  }
+  body.toc-open .toc-backdrop{
+    display:block;
+  }
+  body.toc-open{
+    overflow:hidden;
+  }
+  article,aside .panel{padding:0.9rem 0.65rem;border-radius:8px}
   details.qa>summary{padding:0.65rem 0.65rem}
   details.qa>div{padding:0.65rem 0.65rem}
   .callout,.callout-warn,.pq{padding:0.55rem 0.65rem;margin:0.6rem 0}
   table.tbl{font-size:0.8rem}
+}
+@media (min-width:821px){
+  #toc-mobile-btn{display:none !important}
+  .toc-backdrop{display:none !important}
+  #toc-close-btn{display:none !important}
 }
 @media print{nav.toc-col,aside{display:none}main{display:block}details.qa:not([open])>*:not(summary){display:block}}
 
@@ -178,19 +222,30 @@ body.toc-hidden nav.toc-col{visibility:hidden}
 </style>
 </head>
 <body>
-<div style="background: var(--paper); border-bottom: 1px solid var(--line); padding: 0.5rem 1rem; font-family: system-ui, sans-serif; font-size: 0.82rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 35;">
-  <span style="color: var(--muted); font-weight: 500;">Technology Ethics</span>
+<div id="guide-top-bar" style="background: var(--paper); border-bottom: 1px solid var(--line); padding: 0.5rem 0.85rem; font-family: system-ui, sans-serif; font-size: 0.82rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 35;">
+  <div style="display: flex; align-items: center; gap: 0.5rem;">
+    <button id="toc-mobile-btn" style="background: var(--wash); border: 1px solid var(--line); border-radius: 6px; padding: 0.3rem 0.65rem; font-size: 0.82rem; font-weight: 600; cursor: pointer; color: var(--ink); display: none; align-items: center; gap: 0.35rem;">
+      <span>&#9776; Contents</span>
+    </button>
+    <span style="color: var(--muted); font-weight: 500;">Technology Ethics</span>
+  </div>
   <div style="display: flex; gap: 0.85rem;">
-    <a href="./index.html" style="color: var(--ink); text-decoration: none; font-weight: 500;">&larr; Ethics Portal</a>
+    <a href="./index.html" style="color: var(--ink); text-decoration: none; font-weight: 500;">&larr; Portal</a>
     <a href="./questions.html" style="color: var(--link); text-decoration: none; font-weight: 600;">Questions Bank &rarr;</a>
   </div>
+</div>
+<div id="toc-backdrop" class="toc-backdrop"></div>
+
 </div>
 <button class="btn" id="theme-fab" style="position:fixed;top:.8rem;right:.8rem;z-index:1000"></button>
 <div id="sprog" aria-hidden="true"><i></i></div><div id="sprog-tip"></div>
 <button id="toc-toggle" type="button" aria-label="Toggle contents sidebar" aria-expanded="true" title="Toggle contents">&#9776;</button>
 <main>
 <nav class="toc-col" id="toc" aria-label="Contents">
-  <h2>Contents</h2>
+  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+    <h2 style="margin: 0;">Contents</h2>
+    <button id="toc-close-btn" style="background: transparent; border: none; font-size: 1.5rem; color: var(--muted); cursor: pointer; padding: 0 0.4rem; line-height: 1;" aria-label="Close contents">&times;</button>
+  </div>
   <div class="top-links"><a href="#start">How to use this guide</a><a href="#cat-map">Your CAT, mapped</a></div>
   <div class="tp">1. Ethics and ethical theories<small>1 h 45 min</small></div><ul><li data-for="t01"><a class="sl" href="#t01"><span class="dot High"></span><span>What ethics is, Kantianism and utilitarianism</span><span class="tm">1 h 05 min</span></a><ul class="sub"><a href="#t01-what-is-ethics">What is ethics?</a><a href="#t01-why-study-ethics">Why study ethics? Negative and positive arguments</a><a href="#t01-laudon">Ethical theories and Laudon&#x27;s three questions, six answers</a><a href="#t01-kantianism">Kantianism</a><a href="#t01-utilitarianism">Utilitarianism</a><a href="#t01-virtue">Virtue ethics and absolutism beyond the slides</a><a href="#t01-fanx">Applying the theories: the FANX case (James)</a><a href="#t01-compare">Kantianism and utilitarianism side by side</a></ul></li><li data-for="t02"><a class="sl" href="#t02"><span class="dot Medium"></span><span>Relativism, egoism, social contract and divine command</span><span class="tm">40 min</span></a><ul class="sub"><a href="#t02-seven-systems">The seven systems at a glance</a><a href="#t02-subjective">Subjective relativism</a><a href="#t02-cultural">Cultural relativism</a><a href="#t02-egoism">Ethical egoism</a><a href="#t02-social-contract">Social contract theory</a><a href="#t02-divine">Divine command theory</a><a href="#t02-filesharing">Past paper: which theory underlies each file-sharing argument?</a><a href="#t02-discussion">Set 1 discussion questions (slides 35-37)</a></ul></li></ul><div class="tp">2. Ethics in engineering<small>1 h 30 min</small></div><ul><li data-for="t03"><a class="sl" href="#t03"><span class="dot Medium"></span><span>Why ethics belongs in engineering</span><span class="tm">25 min</span></a><ul class="sub"><a href="#t03-what-is-ethics">What is meant by ethics, and the first clicker question</a><a href="#t03-ethics-in-course">Where does ethics fit into an engineering course?</a><a href="#t03-consequences">Products and processes have consequences for society</a><a href="#t03-fukushima">Worked example: Fukushima and the ethics of nuclear power</a><a href="#t03-essence">The essence of an engineering career, and social responsibility</a><a href="#t03-professional-responsibility">Professional responsibility and the two dimensions of ethics in engineering</a><a href="#t03-questions">Exam questions on why ethics belongs in engineering</a></ul></li><li data-for="t04"><a class="sl" href="#t04"><span class="dot High"></span><span>The engineering code of ethics and its cases</span><span class="tm">40 min</span></a><ul class="sub"><a href="#t04-role-responsibilities">Role responsibilities (slides 26-27)</a><a href="#t04-fields">Ethics across the fields of engineering (slide 28)</a><a href="#t04-why-follow">Why follow the code? (slide 29, clicker)</a><a href="#t04-three-components">The three components of the code (slide 30)</a><a href="#t04-canons">The NSPE fundamental canons (slide 31)</a><a href="#t04-competence">The principle of individual competence</a><a href="#t04-bolts">Try it yourself: the foreign bolts (slides 32-34)</a><a href="#t04-notes">Important notes about the code (slide 35)</a><a href="#t04-larom">The Larom case (slides 36-38)</a><a href="#t04-atlanta">The Atlanta Olympic stadium light tower</a><a href="#t04-bids">Two engineers, sealed bids</a><a href="#t04-personal-organisational">Personal versus organizational responsibility</a><a href="#t04-practice">Ethics takes practice: knowledge versus behaviour (slide 39)</a><a href="#t04-integrity">The example of integrity (slide 40)</a></ul></li><li data-for="t05"><a class="sl" href="#t05"><span class="dot Medium"></span><span>Academic integrity and ethical conduct of research</span><span class="tm">25 min</span></a><ul class="sub"><a href="#t05-students-code">Students have a code of ethics too</a><a href="#t05-preamble">The S07-2 preamble</a><a href="#t05-plagiarism-cheating">Plagiarism and cheating: why competence is the issue</a><a href="#t05-statistics">What students say: the statistics</a><a href="#t05-definition-types">Cheating defined, and the five SJSU types</a><a href="#t05-teamwork">Cheating versus teamwork, and free-riding</a><a href="#t05-why-wrong">Why cheating is wrong</a><a href="#t05-courage">Ethics: courage and integrity</a><a href="#t05-hiring">The hiring exercise and real cheating scandals</a><a href="#t05-research-conduct">Ethical conduct of research</a><a href="#t05-mildred">The Mildred case</a></ul></li></ul><div class="tp">3. Law, dilemmas and case analysis<small>2 h 30 min</small></div><ul><li data-for="t06"><a class="sl" href="#t06"><span class="dot High"></span><span>Law versus ethics, and resolving ethical dilemmas</span><span class="tm">40 min</span></a><ul class="sub"><a href="#t06-nature">The nature of ethics</a><a href="#t06-law-vs-ethics">Law versus ethics</a><a href="#t06-legal-ethical">Is &quot;legal&quot; the same as &quot;ethical&quot;?</a><a href="#t06-four-categories">Law versus morality: the four categories</a><a href="#t06-you-and-al">Consider this: &quot;You and Al&quot;</a><a href="#t06-dilemma">What is an ethical dilemma?</a><a href="#t06-pentium">The Pentium case and &quot;going beyond the code&quot;</a><a href="#t06-steps">How to resolve ethical dilemmas: the eight steps</a><a href="#t06-theories">How to evaluate solutions: five theories and tests</a><a href="#t06-frameworks">The five ethical frameworks (Set 3)</a></ul></li><li data-for="t07"><a class="sl" href="#t07"><span class="dot High"></span><span>Case analysis and the 7-step template</span><span class="tm">1 h 00 min</span></a><ul class="sub"><a href="#t07-template">The 7-step ethical analysis template</a><a href="#t07-bridge">Case 1: protecting the safety of society (the bridge)</a><a href="#t07-nuclear">Case 2: telling the truth in public statements (the nuclear reactor)</a><a href="#t07-simon">Question bank A1(i): Simon and the social-media data</a><a href="#t07-aggie">Question bank C2: Aggie and the weed killer</a><a href="#t07-bart">BART case (2017 paper, question 4)</a><a href="#t07-pacemaker">Pacemaker and transistor case (2015 paper, question 6)</a></ul></li><li data-for="t08"><a class="sl" href="#t08"><span class="dot Medium"></span><span>The four group cases</span><span class="tm">50 min</span></a><ul class="sub"><a href="#t08-exercise">The group exercise and how to use it</a><a href="#t08-case1">Case 1: safety shortcuts on presses and stamping machines</a><a href="#t08-case2">Case 2: toxic liquid waste slightly over the legal limit</a><a href="#t08-case3">Case 3: recycled-composite wall sections and whether to tell customers</a><a href="#t08-case4">Case 4: security systems, surveillance and biometrics</a><a href="#t08-compare">The four cases side by side</a></ul></li></ul><div class="tp">4. Professional bodies and codes<small>1 h 55 min</small></div><ul><li data-for="t09"><a class="sl" href="#t09"><span class="dot High"></span><span>Model rules: obligations to society, employers and engineers</span><span class="tm">35 min</span></a><ul class="sub"><a href="#t09-overview">The model rules and their preamble</a><a href="#t09-society">Obligation to society</a><a href="#t09-employers">Obligation to employers and clients</a><a href="#t09-engineers">Obligations to other engineers</a></ul></li><li data-for="t10"><a class="sl" href="#t10"><span class="dot Medium"></span><span>Contract law and the problems of law in engineering</span><span class="tm">25 min</span></a><ul class="sub"><a href="#t10-contract-law">Contract law: what makes a contract</a><a href="#t10-other-issues">Other contract issues</a><a href="#t10-breach">Breach of contract</a><a href="#t10-letter-spirit">The letter versus the spirit of the law</a><a href="#t10-madge-harold">Case question: Madge and Harold</a><a href="#t10-problems">The problems of law in engineering</a><a href="#t10-role-of-law">The role of law in engineering</a></ul></li><li data-for="t11"><a class="sl" href="#t11"><span class="dot High"></span><span>Codes of ethics: functions, limitations and canons</span><span class="tm">55 min</span></a><ul class="sub"><a href="#t11-what-is-code">What a code of ethics is, and what it contains</a><a href="#t11-principles">The fundamental principles: ABET and ASME</a><a href="#t11-canons">The fundamental canons: ABET, ASME and NSPE</a><a href="#t11-functions">The seven functions of codes of ethics</a><a href="#t11-relative">The relative importance of the functions</a><a href="#t11-limitations">The four limitations of codes of ethics</a><a href="#t11-write-code">Writing a code for a small high-tech firm</a></ul></li></ul><div class="tp">5. Intellectual property<small>2 h 25 min</small></div><ul><li data-for="t12"><a class="sl" href="#t12"><span class="dot High"></span><span>IP, protection types, copyright and fair use</span><span class="tm">40 min</span></a><ul class="sub"><a href="#t12-what-is-ip">What is intellectual property?</a><a href="#t12-two-goals">Protecting IP: two competing goals</a><a href="#t12-trade-secrets">Trade secrets</a><a href="#t12-trademarks">Trademarks</a><a href="#t12-patents">Patents</a><a href="#t12-copyright">Copyright and its five rights</a><a href="#t12-fair-use">Fair use</a><a href="#t12-memo">Worked case: Mofonic, Bunten and Schaeffer (2016 Q6, 20 marks)</a></ul></li><li data-for="t13"><a class="sl" href="#t13"><span class="dot High"></span><span>Protection challenges, DRM and the landmark cases</span><span class="tm">35 min</span></a><ul class="sub"><a href="#t13-challenges">IP protection challenges: digital copies and peer-to-peer sharing</a><a href="#t13-riaa">The RIAA lawsuits</a><a href="#t13-fair-software">Fair use issues and the software protection question</a><a href="#t13-three-answers">The three answers to the challenges: prevention, tracking, punishing</a><a href="#t13-fairuse-cases">Significant fair use cases: Sony and Diamond</a><a href="#t13-reverse">Reverse engineering cases</a><a href="#t13-napster">File sharing cases: Napster</a><a href="#t13-grokster">File sharing cases: Grokster</a><a href="#t13-drm-examples">DRM examples for CDs and DVDs</a><a href="#t13-johansen">The CSS case: Jon Johansen and 2600.com</a><a href="#t13-drm-criticisms">Criticisms of DRM</a></ul></li><li data-for="t14"><a class="sl" href="#t14"><span class="dot High"></span><span>Copyright law, software protection and the DMCA</span><span class="tm">35 min</span></a><ul class="sub"><a href="#t14-copyright-history">US copyright law: a history of expansion</a><a href="#t14-longer-protection">Criticisms of longer protection</a><a href="#t14-harsher-punishments">Harsher punishments</a><a href="#t14-dmca">The DMCA and its consequences</a><a href="#t14-software-protection">Software protection: the two arguments</a><a href="#t14-software-copyright">Software copyrights</a><a href="#t14-software-patents">Software patents</a><a href="#t14-patent-criticisms">Criticisms of software patents</a></ul></li><li data-for="t15"><a class="sl" href="#t15"><span class="dot Medium"></span><span>Open source and Creative Commons</span><span class="tm">35 min</span></a><ul class="sub"><a href="#t15-open-source">Open-source software and copyleft</a><a href="#t15-creative-commons">Creative Commons licences</a><a href="#t15-benefits-criticisms">Benefits and criticisms of open source</a><a href="#t15-comparison">Comparison: proprietary, open source and Creative Commons</a><a href="#t15-practice">Practice: open source, copyleft and Creative Commons</a><a href="#t15-discussion">Discussion questions with model answers</a></ul></li></ul><div class="tp">6. Safety and risk<small>1 h 10 min</small></div><ul><li data-for="t16"><a class="sl" href="#t16"><span class="dot Medium"></span><span>Safety, risk and acceptable risk</span><span class="tm">35 min</span></a><ul class="sub"><a href="#t16-regulations">Lead-in: engineering as social experimentation and the role of rules</a><a href="#t16-power-plant">The thought experiment and who is affected</a><a href="#t16-concept">The concept of safety and why the simple definition fails</a><a href="#t16-risk">Risk, and why risk is reality and safety is fantasy</a><a href="#t16-acceptable">Safety as acceptable risk, and what makes a risk acceptable</a><a href="#t16-voluntary">Voluntary risk, control and disaster</a><a href="#t16-framing">How information is presented changes how risk is perceived</a></ul></li><li data-for="t17"><a class="sl" href="#t17"><span class="dot Medium"></span><span>Costs of unsafe design, uncertainty and testing</span><span class="tm">35 min</span></a><ul class="sub"><a href="#t17-secondary-costs">Secondary costs of products</a><a href="#t17-why-understand-risk">Why manufacturer and buyer must understand the risk</a><a href="#t17-job-risks">Job-related risks</a><a href="#t17-public-concept">Problems engineers face with the public concept of safety</a><a href="#t17-safety-price">&quot;Safety in a commodity comes with a price&quot;</a><a href="#t17-knowledge-of-risk">Knowledge of risk for better safety</a><a href="#t17-uncertainties">Uncertainties encountered in the design process</a><a href="#t17-testing">Testing strategies for safety</a><a href="#t17-practice-uncertainty">Practice: uncertainties, testing and the safety questions</a><a href="#t17-risk-management">Risk management process and risk control options beyond the slides</a></ul></li></ul><div class="tp">7. Privacy<small>1 h 45 min</small></div><ul><li data-for="t18"><a class="sl" href="#t18"><span class="dot Medium"></span><span>Privacy, the law and government surveillance</span><span class="tm">40 min</span></a><ul class="sub"><a href="#t18-conundrum">Privacy protection and the law: the ethical conundrum</a><a href="#t18-limits">Why privacy matters, reasonable limits and the Fourth Amendment</a><a href="#t18-issues">Key privacy and anonymity issues</a><a href="#t18-patriot">Governmental electronic surveillance and the USA Patriot Act of 2001</a><a href="#t18-sunset">Provisions subject to sunset (slides 6 and 8) and the terms used (slide 7)</a><a href="#t18-balance">Weighing the Patriot Act: the two sides</a><a href="#t18-law-summary">Legal summary: the right to privacy and the main surveillance laws (slide 28)</a><a href="#t18-qb-a2">Privacy versus security when monitoring or censoring the Internet</a><a href="#t18-marlinspike">Case: Moxie Marlinspike and the Saudi surveillance request</a><a href="#t18-smart-city">Case: smart lampposts and surveillance in cities (CAT 1 2021-22, Q3)</a></ul></li><li data-for="t19"><a class="sl" href="#t19"><span class="dot Low"></span><span>Encryption and identity theft</span><span class="tm">25 min</span></a><ul class="sub"><a href="#t19-cryptography">Cryptography and encryption</a><a href="#t19-keys">Encryption keys, public-key and private-key systems</a><a href="#t19-built-in">Building encryption into systems, and export control</a><a href="#t19-identity-theft">Identity theft</a><a href="#t19-phishing">Phishing and spear-phishing</a><a href="#t19-spyware">Spyware and the law</a></ul></li><li data-for="t20"><a class="sl" href="#t20"><span class="dot Medium"></span><span>Profiling, workplace monitoring, spam and surveillance technology</span><span class="tm">40 min</span></a><ul class="sub"><a href="#t20-consumer-profiling">Consumer profiling: how data is collected (slides 17-19)</a><a href="#t20-personalization">Personalization software and P3P (slide 20)</a><a href="#t20-data-mining">Data mining and privacy</a><a href="#t20-responsible-data">Treating consumer data responsibly (slides 21-22)</a><a href="#t20-workplace-monitoring">Workplace monitoring (slide 23)</a><a href="#t20-spam">Spamming (slides 24-25)</a><a href="#t20-surveillance-tech">Advanced surveillance technology (slides 26-27)</a><a href="#t20-summary">Summary of the privacy topic (slides 28-29)</a></ul></li></ul><div class="tp">8. Recurring in CATs but not in your slides<small>1 h 35 min</small></div><ul><li data-for="t21"><a class="sl" href="#t21"><span class="dot High"></span><span>Profession versus occupation, whistleblowing and conflict of interest</span><span class="tm">1 h 00 min</span></a><ul class="sub"><a href="#t21-profession-occupation">Profession versus occupation</a><a href="#t21-engineering-profession">What qualifies engineering as a profession</a><a href="#t21-professional-body">Characteristics that distinguish a professional body</a><a href="#t21-motivation">Factors that motivate engineers to practise their profession well</a><a href="#t21-whistle-meaning">Whistleblowing: meaning, internal versus external</a><a href="#t21-whistle-conditions">Conditions for blowing the whistle, critical loyalty and impacts</a><a href="#t21-coi-meaning">Conflict of interest: meaning, actual versus potential</a><a href="#t21-coi-cases">Conflict of interest cases: Engineer A and B, and Maggie and Red Sky</a></ul></li><li data-for="t22"><a class="sl" href="#t22"><span class="dot High"></span><span>Ethics of the internet, AI, robots and the environment</span><span class="tm">35 min</span></a><ul class="sub"><a href="#t22-ai-education">Ethical issues of AI in education</a><a href="#t22-internet">The internet: benefits and ethical issues</a><a href="#t22-robots">Robots and the ethical values to embed</a><a href="#t22-environment">Environment and sustainable development (compact block)</a></ul></li></ul>
   <div class="top-links"><a href="#qindex">Question index</a></div>
@@ -8486,9 +8541,57 @@ body.toc-hidden nav.toc-col{visibility:hidden}
   if('IntersectionObserver' in window){
     var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){
       Object.keys(links).forEach(function(k){links[k].classList.remove('active');links[k].parentNode.classList.remove('open')});
-      var a=links[e.target.id];if(a){a.classList.add('active');a.parentNode.classList.add('open');a.scrollIntoView({block:'nearest'})}}})},{rootMargin:'-10% 0px -80% 0px'});
+      var a=links[e.target.id];if(a){a.classList.add('active');a.parentNode.classList.add('open');if(window.innerWidth > 820){a.scrollIntoView({block:'nearest'})}}}})},{rootMargin:'-10% 0px -80% 0px'});
     secs.forEach(function(s){io.observe(s)});
   }
+
+  // Mobile drawer controls and smooth TOC jumping
+  var tocBackdrop = document.getElementById('toc-backdrop');
+  var mobileTocBtn = document.getElementById('toc-mobile-btn');
+  var closeTocBtn = document.getElementById('toc-close-btn');
+
+  function openMobileToc() {
+    body.classList.add('toc-open');
+  }
+  function closeMobileToc() {
+    body.classList.remove('toc-open');
+  }
+
+  if (mobileTocBtn) mobileTocBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    if (body.classList.contains('toc-open')) closeMobileToc();
+    else openMobileToc();
+  });
+  if (closeTocBtn) closeTocBtn.addEventListener('click', closeMobileToc);
+  if (tocBackdrop) tocBackdrop.addEventListener('click', closeMobileToc);
+
+  document.querySelectorAll('#toc a[href^="#"]').forEach(function(link) {
+    link.addEventListener('click', function(e) {
+      var href = this.getAttribute('href');
+      if (!href || href === '#') return;
+      var targetId = href.slice(1);
+      var targetEl = document.getElementById(targetId);
+      if (targetEl) {
+        e.preventDefault();
+        closeMobileToc();
+
+        var topBar = document.getElementById('guide-top-bar');
+        var offset = (topBar ? topBar.offsetHeight : 44) + 14;
+        var elementPosition = targetEl.getBoundingClientRect().top;
+        var offsetPosition = elementPosition + window.pageYOffset - offset;
+
+        window.scrollTo({
+          top: Math.max(0, offsetPosition),
+          behavior: 'smooth'
+        });
+
+        try {
+          history.pushState(null, '', '#' + targetId);
+        } catch(err) {}
+      }
+    });
+  });
+
 })();
 </script>
 </body>
