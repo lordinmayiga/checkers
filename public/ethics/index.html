@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Technology Ethics Portal</title>
 <meta name="report-preset" content="study">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cstyle%3E.t%7Bfill%3A%233a4fb0%7D.g%7Bstroke%3A%23fff%3Bfill%3Anone%3Bstroke-linecap%3Around%3Bstroke-linejoin%3Around%7D%40media%20(prefers-color-scheme%3Adark)%7B.t%7Bfill%3A%239aa8ff%7D.g%7Bstroke%3A%23141833%7D%7D%3C%2Fstyle%3E%3Crect%20class%3D%22t%22%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%227%22%2F%3E%3Cpath%20class%3D%22g%22%20d%3D%22M5.5%209.5c3.5-1.2%207.2-1%2010.5%201.2%203.3-2.2%207-2.4%2010.5-1.2v13c-3.5-1.2-7.2-1-10.5%201.2-3.3-2.2-7-2.4-10.5-1.2z%22%20stroke-width%3D%222.2%22%2F%3E%3Cpath%20class%3D%22g%22%20d%3D%22M16%2010.7v13%22%20stroke-width%3D%222.2%22%2F%3E%3C%2Fsvg%3E">
@@ -30,12 +30,12 @@ body {
   background: var(--bg);
   color: var(--fg);
   font-family: var(--body);
-  padding: 2.5rem 1rem 4rem;
+  padding: 3rem 1.25rem 4rem;
   line-height: 1.65;
   -webkit-font-smoothing: antialiased;
 }
 .container {
-  max-width: 860px;
+  max-width: 840px;
   margin: 0 auto;
 }
 .eyebrow {
@@ -44,31 +44,31 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--accent);
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.6rem;
 }
 h1 {
   font-family: var(--display);
-  font-size: 2.4rem;
+  font-size: 2.35rem;
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1.22;
   margin-bottom: 0.8rem;
 }
 p.intro {
   color: var(--muted);
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   margin-bottom: 2.5rem;
+  max-width: 720px;
 }
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.25rem;
-  margin-bottom: 3rem;
+  gap: 1.4rem;
 }
 .portal-card {
   background: var(--surface);
   border: 1px solid var(--rule);
   border-radius: 12px;
-  padding: 1.6rem;
+  padding: 1.8rem;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -89,7 +89,7 @@ p.intro {
 .portal-card p {
   color: var(--muted);
   font-size: 0.95rem;
-  margin-bottom: 1.2rem;
+  margin-bottom: 1.5rem;
   flex: 1;
 }
 .card-action {
@@ -101,54 +101,10 @@ p.intro {
   align-items: center;
   gap: 0.35rem;
 }
-.pdf-section {
-  background: var(--surface);
-  border: 1px solid var(--rule);
-  border-radius: 12px;
-  padding: 1.8rem;
-}
-.pdf-section h2 {
-  font-family: var(--display);
-  font-size: 1.5rem;
-  margin-bottom: 0.5rem;
-}
-.pdf-section p {
-  color: var(--muted);
-  font-size: 0.95rem;
-  margin-bottom: 1.2rem;
-}
-.pdf-list {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-}
-.pdf-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem 1rem;
-  background: var(--bg);
-  border: 1px solid var(--rule);
-  border-radius: 8px;
-  text-decoration: none;
-  color: var(--fg);
-  font-size: 0.95rem;
-  transition: border-color 0.15s ease;
-}
-.pdf-item:hover {
-  border-color: var(--accent);
-}
-.pdf-meta {
-  font-family: var(--mono);
-  font-size: 0.78rem;
-  color: var(--muted);
-}
 @media (max-width: 600px) {
-  body { padding: 1.5rem 0.85rem 3rem; }
-  h1 { font-size: 1.85rem; }
+  body { padding: 1.8rem 0.85rem 3rem; }
+  h1 { font-size: 1.8rem; }
   .grid { grid-template-columns: 1fr; }
-  .pdf-item { flex-direction: column; align-items: flex-start; gap: 0.3rem; }
 }
 </style>
 </head>
@@ -156,14 +112,14 @@ p.intro {
 <div class="container">
   <div class="eyebrow">Technology Ethics • Direct Access Portal</div>
   <h1>Course Preparation &amp; Exam Bank</h1>
-  <p class="intro">Access the complete study guide, the interactive past paper questions bank, or download individual PDF sets for offline revision.</p>
+  <p class="intro">Interactive study pages for Technology Ethics: revision notes with model answers, and the tested question bank with mobile filter drawer.</p>
 
   <div class="grid">
     <a href="./questions.html" class="portal-card">
       <div>
         <div class="eyebrow">Interactive Bank</div>
         <h2>Tested Questions Bank</h2>
-        <p>134 past paper instances grouped into 37 core question unions. Sort by test frequency &amp; marks, track attempts with checkboxes, and view expandable model answers.</p>
+        <p>134 tested past paper questions grouped into 37 core exam unions. Filter, search, sort by test frequency &amp; marks, track attempts with checkboxes, and view expandable model answers.</p>
       </div>
       <div class="card-action">Open Questions Bank &rarr;</div>
     </a>
@@ -176,61 +132,6 @@ p.intro {
       </div>
       <div class="card-action">Open Full Study Guide &rarr;</div>
     </a>
-  </div>
-
-  <div class="pdf-section" id="downloads">
-    <h2>Download Compiled Set PDFs</h2>
-    <p>Print-optimized individual PDFs compiled from the study guide notes (total 298 pages):</p>
-    <ul class="pdf-list">
-      <li>
-        <a href="./pdf/Set%201%20-%20Ethics%20and%20Ethical%20Theories.pdf" class="pdf-item" download>
-          <span><strong>Set 1:</strong> Ethics and Ethical Theories</span>
-          <span class="pdf-meta">35 pages • 881 KB</span>
-        </a>
-      </li>
-      <li>
-        <a href="./pdf/Set%202%20-%20Ethics%20in%20Engineering.pdf" class="pdf-item" download>
-          <span><strong>Set 2:</strong> Ethics in Engineering</span>
-          <span class="pdf-meta">32 pages • 752 KB</span>
-        </a>
-      </li>
-      <li>
-        <a href="./pdf/Set%203%20-%20Moral%20Considerations,%20Ethical%20Dilemma%20and%20Conflict.pdf" class="pdf-item" download>
-          <span><strong>Set 3:</strong> Moral Considerations, Ethical Dilemma &amp; Conflict</span>
-          <span class="pdf-meta">45 pages • 979 KB</span>
-        </a>
-      </li>
-      <li>
-        <a href="./pdf/Set%204%20-%20Professional%20Bodies%20and%20Codes.pdf" class="pdf-item" download>
-          <span><strong>Set 4:</strong> Professional Bodies and Codes</span>
-          <span class="pdf-meta">38 pages • 932 KB</span>
-        </a>
-      </li>
-      <li>
-        <a href="./pdf/Set%205%20-%20Intellectual%20Property.pdf" class="pdf-item" download>
-          <span><strong>Set 5:</strong> Intellectual Property</span>
-          <span class="pdf-meta">46 pages • 1.2 MB</span>
-        </a>
-      </li>
-      <li>
-        <a href="./pdf/Set%206%20-%20Safety%20and%20Risk.pdf" class="pdf-item" download>
-          <span><strong>Set 6:</strong> Safety and Risk</span>
-          <span class="pdf-meta">22 pages • 649 KB</span>
-        </a>
-      </li>
-      <li>
-        <a href="./pdf/Set%207%20-%20Privacy.pdf" class="pdf-item" download>
-          <span><strong>Set 7:</strong> Privacy</span>
-          <span class="pdf-meta">38 pages • 904 KB</span>
-        </a>
-      </li>
-      <li>
-        <a href="./pdf/Set%208%20-%20Recurring%20CAT%20Topics.pdf" class="pdf-item" download>
-          <span><strong>Set 8:</strong> Recurring CAT Topics (Whistleblowing, AI, Conflict)</span>
-          <span class="pdf-meta">42 pages • 1.0 MB</span>
-        </a>
-      </li>
-    </ul>
   </div>
 </div>
 </body>
