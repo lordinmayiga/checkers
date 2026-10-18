@@ -1,0 +1,7 @@
+{
+  "rewrites": [
+    { "source": "/ethics", "destination": "/ethics/index.html" },
+    { "source": "/ethics/questions", "destination": "/ethics/questions.html" },
+    { "source": "/ethics/guide", "destination": "/ethics/guide.html" }
+  ]
+}
